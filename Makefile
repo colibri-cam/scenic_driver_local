@@ -7,6 +7,11 @@ ifdef SCENIC_LOCAL_GL
 $(info SCENIC_LOCAL_GL: $(SCENIC_LOCAL_GL))
 endif
 
+SKIA_CFLAGS ?= $(shell pkg-config --cflags skia 2>/dev/null)
+SKIA_LDFLAGS ?= $(shell pkg-config --libs skia 2>/dev/null)
+GLFW_CFLAGS ?= $(shell pkg-config --cflags glfw3 glew 2>/dev/null)
+GLFW_LDFLAGS ?= $(shell pkg-config --libs glfw3 glew 2>/dev/null)
+
 DEVICE_SRCS =
 
 FONT_SRCS = \
@@ -36,10 +41,16 @@ NVG_COMMON_SRCS = \
 	c_src/device/nvg/nvg_script_ops.c
 
 CAIRO_COMMON_SRCS = \
-	c_src/device/cairo/cairo_common.c \
-	c_src/device/cairo/cairo_font_ops.c \
-	c_src/device/cairo/cairo_image_ops.c \
-	c_src/device/cairo/cairo_script_ops.c
+        c_src/device/cairo/cairo_common.c \
+        c_src/device/cairo/cairo_font_ops.c \
+        c_src/device/cairo/cairo_image_ops.c \
+        c_src/device/cairo/cairo_script_ops.c
+
+SKIA_COMMON_SRCS = \
+        c_src/device/skia/skia_common.c \
+        c_src/device/skia/skia_font_ops.c \
+        c_src/device/skia/skia_image_ops.c \
+        c_src/device/skia/skia_script_ops.c
 
 ifeq ($(SCENIC_LOCAL_TARGET),cairo-gtk)
 	CFLAGS = -O3 -std=gnu99
@@ -65,15 +76,49 @@ ifeq ($(SCENIC_LOCAL_TARGET),cairo-gtk)
 		c_src/device/cairo/cairo_gtk.c
 
 else ifeq ($(SCENIC_LOCAL_TARGET),cairo-fb)
-	LDFLAGS += `pkg-config --static --libs freetype2 cairo`
-	CFLAGS += `pkg-config --static --cflags freetype2 cairo`
-	LDFLAGS += -lm
-	CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -pedantic
-	CFLAGS += -std=gnu99
+        LDFLAGS += `pkg-config --static --libs freetype2 cairo`
+        CFLAGS += `pkg-config --static --cflags freetype2 cairo`
+        LDFLAGS += -lm
+        CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -pedantic
+        CFLAGS += -std=gnu99
 
-	DEVICE_SRCS += \
-		$(CAIRO_COMMON_SRCS) \
-		c_src/device/cairo/cairo_fb.c
+        DEVICE_SRCS += \
+                $(CAIRO_COMMON_SRCS) \
+                c_src/device/cairo/cairo_fb.c
+
+else ifeq ($(SCENIC_LOCAL_TARGET),skia-fb)
+        CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -pedantic
+        CFLAGS += -std=gnu99
+
+        ifeq ($(strip $(SKIA_CFLAGS)),)
+                $(error Skia headers not found. Set SKIA_CFLAGS/SKIA_LDFLAGS to build skia-fb.)
+        endif
+
+        CFLAGS += $(SKIA_CFLAGS)
+        LDFLAGS += $(SKIA_LDFLAGS) -lm
+
+        DEVICE_SRCS += \
+                $(SKIA_COMMON_SRCS) \
+                c_src/device/skia/skia_fb.c
+
+else ifeq ($(SCENIC_LOCAL_TARGET),skia-glfw)
+        CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -pedantic
+        CFLAGS += -std=gnu99
+
+        ifeq ($(strip $(SKIA_CFLAGS)),)
+                $(error Skia headers not found. Set SKIA_CFLAGS/SKIA_LDFLAGS to build skia-glfw.)
+        endif
+
+        ifeq ($(strip $(GLFW_CFLAGS)),)
+                $(error GLFW+GLEW headers not found. Install glfw3/glew development packages to build skia-glfw.)
+        endif
+
+        CFLAGS += $(SKIA_CFLAGS) $(GLFW_CFLAGS)
+        LDFLAGS += $(SKIA_LDFLAGS) $(GLFW_LDFLAGS) -lm
+
+        DEVICE_SRCS += \
+                $(SKIA_COMMON_SRCS) \
+                c_src/device/skia/skia_glfw.c
 
 else ifeq ($(SCENIC_LOCAL_TARGET),glfw)
 $(info )
