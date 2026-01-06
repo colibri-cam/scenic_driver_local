@@ -10,6 +10,16 @@ endif
 SKIA_CFLAGS ?= $(shell pkg-config --cflags skia 2>/dev/null)
 SKIA_LDFLAGS ?= $(shell pkg-config --libs skia 2>/dev/null)
 
+# Fallback include/lib locations for SkiaSharp C headers and libraries so callers
+# do not need to set SKIA_CFLAGS/SKIA_LDFLAGS manually when the standard
+# installation prefix is used.
+ifeq ($(strip $(SKIA_CFLAGS)),)
+SKIA_CFLAGS := -I/usr/local/include
+endif
+ifeq ($(strip $(SKIA_LDFLAGS)),)
+SKIA_LDFLAGS := -L/usr/local/lib -lSkiaSharp
+endif
+
 DEVICE_SRCS =
 
 FONT_SRCS = \
