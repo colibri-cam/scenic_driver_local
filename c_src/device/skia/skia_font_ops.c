@@ -45,7 +45,7 @@ int32_t font_ops_create(void* v_ctx, font_t* p_font, uint32_t size)
   scenic_skia_ctx_t* p_ctx = (scenic_skia_ctx_t*)v_ctx;
 
   sk_data_t* data = sk_data_new_with_copy(p_font->blob.p_data, size);
-  sk_typeface_t* typeface = sk_typeface_new_from_data(data, 0);
+  sk_typeface_t* typeface = sk_typeface_create_from_data(data, 0);
   sk_data_unref(data);
 
   if (!typeface) {
