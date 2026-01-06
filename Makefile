@@ -7,6 +7,9 @@ ifdef SCENIC_LOCAL_GL
 $(info SCENIC_LOCAL_GL: $(SCENIC_LOCAL_GL))
 endif
 
+SKIA_BOOTSTRAP :=
+
+ifneq ($(filter skia-fb skia-glfw,$(SCENIC_LOCAL_TARGET)),)
 SKIA_CFLAGS ?= $(shell pkg-config --cflags skia 2>/dev/null)
 SKIA_LDFLAGS ?= $(shell pkg-config --libs skia 2>/dev/null)
 
@@ -32,8 +35,6 @@ ifeq ($(strip $(SKIA_LDFLAGS)),)
 SKIA_LDFLAGS := -L$(SKIA_LIB_DIR) -lSkiaSharp -Wl,-rpath,$(SKIA_LIB_DIR)
 endif
 
-SKIA_BOOTSTRAP :=
-
 $(SKIA_NATIVE_NUGET):
 	mkdir -p $(SKIA_VENDOR_DIR)
 	curl -L https://www.nuget.org/api/v2/package/SkiaSharp.NativeAssets.Linux.NoDependencies/$(SKIA_VERSION) -o $@
@@ -50,6 +51,7 @@ $(SKIA_HEADERS_DIR):
 
 $(SKIA_HEADERS_DIR)/%.h: | $(SKIA_HEADERS_DIR)
 	curl -L https://raw.githubusercontent.com/mono/skia/master/include/c/$(@F) -o $@
+endif
 
 DEVICE_SRCS =
 
