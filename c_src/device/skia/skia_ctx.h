@@ -68,6 +68,11 @@ typedef struct {
 
 scenic_skia_ctx_t* scenic_skia_init(const device_opts_t* p_opts,
                                     device_info_t* p_info);
+scenic_skia_ctx_t* scenic_skia_init_with_surface(const device_opts_t* p_opts,
+                                                 device_info_t* p_info,
+                                                 sk_surface_t* surface);
+void scenic_skia_replace_surface(scenic_skia_ctx_t* p_ctx,
+                                 sk_surface_t* surface);
 void scenic_skia_fini(scenic_skia_ctx_t* p_ctx);
 
 void pattern_stack_push(scenic_skia_ctx_t* p_ctx);

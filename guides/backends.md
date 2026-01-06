@@ -2,8 +2,8 @@
 
 The driver chooses its rendering backend at compile time through the
 `SCENIC_LOCAL_TARGET` make variable. Existing options are `cairo-gtk`,
-`cairo-fb`, `skia-fb`, `glfw`, `bcm`, and `drm` (all configured in the root
-`Makefile`).
+`cairo-fb`, `skia-fb`, `skia-glfw`, `glfw`, `bcm`, and `drm` (all configured in
+the root `Makefile`).
 Each target supplies a backend-specific set of C sources and the required
 compiler/linker flags (for example, Cairo and GTK `pkg-config` entries for
 `cairo-gtk`, or NanoVG plus GLES for the GL targets).
@@ -36,6 +36,16 @@ loop (`render()` in `c_src/scenic/comms.c`). The lifecycle is:
 5. `device_end_render` presents the finished frame (for framebuffers this means
    copying the raster surface into the device memory; for GL it swaps buffers).
 6. `device_close` frees backend resources and cleans up device state.
+
+### Desktop Skia (GLFW/EGL)
+
+The `skia-glfw` target provides a GPU-backed desktop renderer. It uses GLFW to
+open a Wayland- or X11-hosted OpenGL context (preferring EGL for Wayland),
+creates a Skia `gr_direct_context_t` from the native GL interface, and wraps the
+default framebuffer in a `gr_backendrendertarget_t`/`sk_surface_t` pair. Window
+resizing rebuilds the backend render target and propagates shape/input events
+through the existing GLFW keymap. Build requirements mirror the runtime needs:
+Skia with GPU support plus `glfw3` and `glew` development headers and libraries.
 
 ### Script, font, and image hooks
 

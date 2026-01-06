@@ -44,6 +44,25 @@ static void delete_paints(paint_pair_t* paints)
 scenic_skia_ctx_t* scenic_skia_init(const device_opts_t* p_opts,
                                     device_info_t* p_info)
 {
+  sk_imageinfo_t info = {
+    .colorspace = NULL,
+    .width = p_info->width,
+    .height = p_info->height,
+    .colorType = BGRA_8888_SK_COLORTYPE,
+    .alphaType = PREMUL_SK_ALPHATYPE,
+  };
+
+  sk_surface_t* surface = sk_surface_new_raster(&info, 0, NULL);
+  if (!surface) {
+    return NULL;
+  }
+
+  return scenic_skia_init_with_surface(p_opts, p_info, surface);
+}
+
+static scenic_skia_ctx_t* scenic_skia_alloc(const device_opts_t* p_opts,
+                                            device_info_t* p_info)
+{
   scenic_skia_ctx_t* p_ctx = calloc(1, sizeof(scenic_skia_ctx_t));
   if (!p_ctx) return NULL;
 
@@ -64,21 +83,6 @@ scenic_skia_ctx_t* scenic_skia_init(const device_opts_t* p_opts,
   p_info->height = p_opts->height;
   p_info->v_ctx = p_ctx;
 
-  sk_imageinfo_t info = {
-    .colorspace = NULL,
-    .width = p_info->width,
-    .height = p_info->height,
-    .colorType = BGRA_8888_SK_COLORTYPE,
-    .alphaType = PREMUL_SK_ALPHATYPE,
-  };
-
-  p_ctx->surface = sk_surface_new_raster(&info, 0, NULL);
-  if (!p_ctx->surface) {
-    free(p_ctx);
-    return NULL;
-  }
-
-  p_ctx->canvas = sk_surface_get_canvas(p_ctx->surface);
   p_ctx->path = sk_path_new();
   p_ctx->paints = init_paints(p_ctx->antialias);
 
@@ -86,6 +90,37 @@ scenic_skia_ctx_t* scenic_skia_init(const device_opts_t* p_opts,
   sk_font_set_size(p_ctx->active_font, p_ctx->font_size);
 
   return p_ctx;
+}
+
+scenic_skia_ctx_t* scenic_skia_init_with_surface(const device_opts_t* p_opts,
+                                                 device_info_t* p_info,
+                                                 sk_surface_t* surface)
+{
+  scenic_skia_ctx_t* p_ctx = scenic_skia_alloc(p_opts, p_info);
+  if (!p_ctx) {
+    if (surface) sk_surface_unref(surface);
+    return NULL;
+  }
+
+  if (!surface) {
+    scenic_skia_fini(p_ctx);
+    return NULL;
+  }
+
+  scenic_skia_replace_surface(p_ctx, surface);
+
+  return p_ctx;
+}
+
+void scenic_skia_replace_surface(scenic_skia_ctx_t* p_ctx,
+                                 sk_surface_t* surface)
+{
+  if (!p_ctx || !surface) return;
+
+  if (p_ctx->surface) sk_surface_unref(p_ctx->surface);
+
+  p_ctx->surface = surface;
+  p_ctx->canvas = sk_surface_get_canvas(surface);
 }
 
 void scenic_skia_fini(scenic_skia_ctx_t* p_ctx)

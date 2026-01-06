@@ -9,6 +9,8 @@ endif
 
 SKIA_CFLAGS ?= $(shell pkg-config --cflags skia 2>/dev/null)
 SKIA_LDFLAGS ?= $(shell pkg-config --libs skia 2>/dev/null)
+GLFW_CFLAGS ?= $(shell pkg-config --cflags glfw3 glew 2>/dev/null)
+GLFW_LDFLAGS ?= $(shell pkg-config --libs glfw3 glew 2>/dev/null)
 
 DEVICE_SRCS =
 
@@ -98,6 +100,25 @@ else ifeq ($(SCENIC_LOCAL_TARGET),skia-fb)
         DEVICE_SRCS += \
                 $(SKIA_COMMON_SRCS) \
                 c_src/device/skia/skia_fb.c
+
+else ifeq ($(SCENIC_LOCAL_TARGET),skia-glfw)
+        CFLAGS ?= -O2 -Wall -Wextra -Wno-unused-parameter -pedantic
+        CFLAGS += -std=gnu99
+
+        ifeq ($(strip $(SKIA_CFLAGS)),)
+                $(error Skia headers not found. Set SKIA_CFLAGS/SKIA_LDFLAGS to build skia-glfw.)
+        endif
+
+        ifeq ($(strip $(GLFW_CFLAGS)),)
+                $(error GLFW+GLEW headers not found. Install glfw3/glew development packages to build skia-glfw.)
+        endif
+
+        CFLAGS += $(SKIA_CFLAGS) $(GLFW_CFLAGS)
+        LDFLAGS += $(SKIA_LDFLAGS) $(GLFW_LDFLAGS) -lm
+
+        DEVICE_SRCS += \
+                $(SKIA_COMMON_SRCS) \
+                c_src/device/skia/skia_glfw.c
 
 else ifeq ($(SCENIC_LOCAL_TARGET),glfw)
 $(info )
